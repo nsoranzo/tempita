@@ -14,11 +14,11 @@ example::
         ...
     TypeError: cannot concatenate 'str' and 'int' objects at line 1 column 6
 
-You can also specifiy delimeters::
+You can also specifiy delimiters::
 
-    >>> sub('Hi ${name}', name='Ian', delimeters=('${', '}'))
+    >>> sub('Hi ${name}', name='Ian', delimiters=('${', '}'))
     'Hi Ian'
-    >>> Template('Hi $[[repr(name)]]', delimeters=('$[[', ']]')).substitute(name='Ian')
+    >>> Template('Hi $[[repr(name)]]', delimiters=('$[[', ']]')).substitute(name='Ian')
     "Hi 'Ian'"
 
 It also has Django-style piping::
