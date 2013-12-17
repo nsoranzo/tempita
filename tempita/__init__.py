@@ -107,7 +107,7 @@ class Template(object):
             self.default_namespace['start_braces'] = delimeters[0]
             self.default_namespace['end_braces'] = delimeters[1]
         self.delimeters = delimeters
-        
+
         self._unicode = is_unicode(content)
         if name is None and stacklevel is not None:
             try:
@@ -1118,14 +1118,18 @@ strings.
 def fill_command(args=None):
     import sys
     import optparse
-    import pkg_resources
     import os
     if args is None:
         args = sys.argv[1:]
-    dist = pkg_resources.get_distribution('Paste')
-    parser = optparse.OptionParser(
-        version=coerce_text(dist),
-        usage=_fill_command_usage)
+    kwargs = dict(usage=_fill_command_usage)
+    try:
+        import pkg_resources
+        dist = pkg_resources.get_distribution('tempita')
+        kwargs['version'] = coerce_text(dist)
+    except ImportError:
+        # pkg_resources not available
+        pass
+    parser = optparse.OptionParser(**kwargs)
     parser.add_option(
         '-o', '--output',
         dest='output',
