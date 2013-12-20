@@ -123,8 +123,8 @@ attribute.  It will try to use that encoding whenever ``unicode`` and
     >>> if sys.version.startswith('2'): # unicode is the default in 3 -> failing test
     ...     print (tmpl.substitute(name='Jos\xc3\xa9'))
     ... else:
-    ...     print ('Hi JosÃ©') # to satisfy doctest
-    Hi JosÃ©
+    ...     print ('Hi José') # to satisfy doctest
+    Hi José
     >>> tmpl = tempita.Template('Hi {{name}}')
     >>> print (tmpl.substitute(name=u'Jos\xe9'))
     Hi José
