@@ -119,11 +119,11 @@ attribute.  It will try to use that encoding whenever ``unicode`` and
 ``str`` objects are mixed in the template.  E.g.::
 
     >>> tmpl = tempita.Template(u'Hi {{name}}')
-    >>> tmpl.substitute(name='Jos\xc3\xa9')
-    u'Hi Jos\xe9'
+    >>> print (tmpl.substitute(name='Jos\xc3\xa9'))
+    Hi JosÃ©
     >>> tmpl = tempita.Template('Hi {{name}}')
-    >>> tmpl.substitute(name=u'Jos\xe9')
-    'Hi Jos\xc3\xa9'
+    >>> print (tmpl.substitute(name=u'Jos\xe9'))
+    Hi José
 
 The default encoding is UTF8.
 
