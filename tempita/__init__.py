@@ -29,13 +29,13 @@ can use ``__name='tmpl.html'`` to set the name of the template.
 If there are syntax errors ``TemplateError`` will be raised.
 """
 
+import cgi
+import os
 import re
 import sys
-import cgi
-from urllib import quote as url_quote
-import os
 import tokenize
 from cStringIO import StringIO
+from urllib import quote as url_quote
 from tempita._looper import looper
 from tempita.compat3 import bytes, basestring_, next, is_unicode, coerce_text
 
