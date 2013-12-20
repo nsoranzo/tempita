@@ -66,14 +66,18 @@ Also Python blocks::
 
 And some syntax errors::
 
-    >>> t = Template('{{if x}}', name='foo.html') # doctest: +IGNORE_EXCEPTION_DETAIL
-    Traceback (most recent call last):
-        ...
-    TemplateError: No {{endif}} at line 1 column 3 in foo.html
-    >>> t = Template('{{for x}}', name='foo2.html')
-    Traceback (most recent call last):
-        ...
-    TemplateError: Bad for (no "in") in 'x' at line 1 column 3 in foo2.html
+    >>> from tempita import TemplateError
+    >>> error = None
+    >>> try:
+    ...     t = Template('{{if x}}', name='foo.html')
+    ... except Exception as e:
+    ...     error = e
+    >>> error.__class__ == TemplateError
+    True
+    >>> error_msg = '''TemplateError: Bad for (no "in") in 'x' at line 1 column 3 in foo2.html''' # BBB python 2 error message (to deprecate)
+    >>> error_msg = 'No {{endif}} at line 1 column 3 in foo.html'
+    >>> str(error) == error_msg
+    True
 
 There's also an HTMLTemplate that uses HTMLisms::
 
