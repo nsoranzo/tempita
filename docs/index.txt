@@ -286,10 +286,10 @@ lets you use attributes::
     >>> bunch = tempita.bunch(a=1)
     >>> bunch.a
     1
-    >>> bunch.items()
+    >>> list(bunch.items())
     [('a', 1)]
     >>> bunch.default = None
-    >>> print bunch.b
+    >>> print (bunch.b)
     None
 
 This can be nice for passing options into a template.
