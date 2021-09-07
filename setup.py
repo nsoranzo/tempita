@@ -23,8 +23,11 @@ more to learn about it.
           'Intended Audience :: Developers',
           'License :: OSI Approved :: MIT License',
           'Topic :: Text Processing',
-          'Programming Language :: Python :: 2',
           'Programming Language :: Python :: 3',
+          'Programming Language :: Python :: 3.6',
+          'Programming Language :: Python :: 3.7',
+          'Programming Language :: Python :: 3.8',
+          'Programming Language :: Python :: 3.9',
       ],
       keywords='templating template language html',
       author='Ian Bicking',
@@ -36,5 +39,4 @@ more to learn about it.
       test_suite='nose.collector',
       include_package_data=True,
       zip_safe=True,
-      use_2to3=True,
       )

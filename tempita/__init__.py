@@ -31,15 +31,16 @@ can use ``__name='tmpl.html'`` to set the name of the template.
 If there are syntax errors ``TemplateError`` will be raised.
 """
 
-import cgi
 import os
 import re
 import sys
 import tokenize
-from cStringIO import StringIO
-from urllib import quote as url_quote
+from html import escape
+from io import StringIO
+from urllib.parse import quote as url_quote
+
 from tempita._looper import looper
-from tempita.compat3 import bytes, basestring_, next, is_unicode, coerce_text
+from tempita.compat3 import basestring_, coerce_text, is_unicode
 
 __all__ = ['TemplateError', 'Template', 'sub', 'HTMLTemplate',
            'sub_html', 'html', 'bunch']
@@ -60,7 +61,7 @@ class TemplateError(Exception):
     def __str__(self):
         msg = ' '.join(self.args)
         if self.position:
-            msg = '%s at line %s column %s' % (
+            msg = '{} at line {} column {}'.format(
                 msg, self.position[0], self.position[1])
         if self.name:
             msg += ' in %s' % self.name
@@ -82,7 +83,7 @@ def get_file_template(name, from_template):
         get_template=from_template.get_template)
 
 
-class Template(object):
+class Template:
 
     default_namespace = {
         'start_braces': '{{',
@@ -103,7 +104,7 @@ class Template(object):
             delimiters = (self.default_namespace['start_braces'],
                           self.default_namespace['end_braces'])
         else:
-            assert len(delimiters) == 2 and all([isinstance(delimeter, basestring)
+            assert len(delimiters) == 2 and all([isinstance(delimeter, str)
                                                  for delimeter in delimiters])
             self.default_namespace = self.__class__.default_namespace.copy()
             self.default_namespace['start_braces'] = delimiters[0]
@@ -151,7 +152,7 @@ class Template(object):
     from_filename = classmethod(from_filename)
 
     def __repr__(self):
-        return '<%s %s name=%r>' % (
+        return '<{} {} name={!r}>'.format(
             self.__class__.__name__,
             hex(id(self))[2:], self.name)
 
@@ -198,7 +199,7 @@ class Template(object):
                 position=None, name=self.name)
         templ = self.get_template(inherit_template, self)
         self_ = TemplateObject(self.name)
-        for name, value in defs.iteritems():
+        for name, value in defs.items():
             setattr(self_, name, value)
         self_.body = body
         ns = ns.copy()
@@ -294,7 +295,7 @@ class Template(object):
         try:
             try:
                 value = eval(code, self.default_namespace, ns)
-            except SyntaxError, e:
+            except SyntaxError as e:
                 raise SyntaxError(
                     'invalid syntax in expression: %s' % code)
             return value
@@ -306,12 +307,12 @@ class Template(object):
             else:
                 arg0 = coerce_text(e)
             e.args = (self._add_line_info(arg0, pos),)
-            raise exc_info[0], e, exc_info[2]
+            raise exc_info[0](e).with_traceback(exc_info[2])
 
     def _exec(self, code, ns, pos):
         __traceback_hide__ = True
         try:
-            exec code in self.default_namespace, ns
+            exec(code, self.default_namespace, ns)
         except:
             exc_info = sys.exc_info()
             e = exc_info[1]
@@ -319,7 +320,7 @@ class Template(object):
                 e.args = (self._add_line_info(e.args[0], pos),)
             else:
                 e.args = (self._add_line_info(None, pos),)
-            raise exc_info[0], e, exc_info[2]
+            raise exc_info[0](e).with_traceback(exc_info[2])
 
     def _repr(self, value, pos):
         __traceback_hide__ = True
@@ -328,7 +329,7 @@ class Template(object):
                 return ''
             if self._unicode:
                 try:
-                    value = unicode(value)
+                    value = str(value)
                 except UnicodeDecodeError:
                     value = bytes(value)
             else:
@@ -341,7 +342,7 @@ class Template(object):
             exc_info = sys.exc_info()
             e = exc_info[1]
             e.args = (self._add_line_info(e.args[0], pos),)
-            raise exc_info[0], e, exc_info[2]
+            raise exc_info[0](e).with_traceback(exc_info[2])
         else:
             if self._unicode and isinstance(value, bytes):
                 if not self.default_encoding:
@@ -350,7 +351,7 @@ class Template(object):
                         '(no default_encoding provided)' % value)
                 try:
                     value = value.decode(self.default_encoding)
-                except UnicodeDecodeError, e:
+                except UnicodeDecodeError as e:
                     raise UnicodeDecodeError(
                         e.encoding,
                         e.object,
@@ -366,7 +367,7 @@ class Template(object):
             return value
 
     def _add_line_info(self, msg, pos):
-        msg = "%s at line %s column %s" % (
+        msg = "{} at line {} column {}".format(
             msg, pos[0], pos[1])
         if self.name:
             msg += " in file %s" % self.name
@@ -387,7 +388,7 @@ def paste_script_template_renderer(content, vars, filename=None):
 class bunch(dict):
 
     def __init__(self, **kw):
-        for name, value in kw.iteritems():
+        for name, value in kw.items():
             setattr(self, name, value)
 
     def __setattr__(self, name, value):
@@ -410,18 +411,18 @@ class bunch(dict):
 
     def __repr__(self):
         items = [
-            (k, v) for k, v in self.iteritems()]
+            (k, v) for k, v in self.items()]
         items.sort()
-        return '<%s %s>' % (
+        return '<{} {}>'.format(
             self.__class__.__name__,
-            ' '.join(['%s=%r' % (k, v) for k, v in items]))
+            ' '.join([f'{k}={v!r}' for k, v in items]))
 
 ############################################################
 ## HTML Templating
 ############################################################
 
 
-class html(object):
+class html:
 
     def __init__(self, value):
         self.value = value
@@ -433,7 +434,7 @@ class html(object):
         return self.value
 
     def __repr__(self):
-        return '<%s %r>' % (
+        return '<{} {!r}>'.format(
             self.__class__.__name__, self.value)
 
 
@@ -445,10 +446,10 @@ def html_quote(value, force=True):
     if not isinstance(value, basestring_):
         value = coerce_text(value)
     if sys.version >= "3" and isinstance(value, bytes):
-        value = cgi.escape(value.decode('latin1'), 1)
+        value = escape(value.decode('latin1'))
         value = value.encode('latin1')
     else:
-        value = cgi.escape(value, 1)
+        value = escape(value)
     if sys.version < "3":
         if is_unicode(value):
             value = value.encode('ascii', 'xmlcharrefreplace')
@@ -463,7 +464,7 @@ def url(v):
 
 
 def attr(**kw):
-    kw = list(kw.iteritems())
+    kw = list(kw.items())
     kw.sort()
     parts = []
     for name, value in kw:
@@ -471,7 +472,7 @@ def attr(**kw):
             continue
         if name.endswith('_'):
             name = name[:-1]
-        parts.append('%s="%s"' % (html_quote(name), html_quote(value)))
+        parts.append(f'{html_quote(name)}="{html_quote(value)}"')
     return html(' '.join(parts))
 
 
@@ -504,7 +505,7 @@ def sub_html(content, **kw):
     return tmpl.substitute(kw)
 
 
-class TemplateDef(object):
+class TemplateDef:
     def __init__(self, template, func_name, func_signature,
                  body, ns, pos, bound_self=None):
         self._template = template
@@ -516,7 +517,7 @@ class TemplateDef(object):
         self._bound_self = bound_self
 
     def __repr__(self):
-        return '<tempita function %s(%s) at %s:%s>' % (
+        return '<tempita function {}({}) at {}:{}>'.format(
             self._func_name, self._func_signature,
             self._template.name, self._pos)
 
@@ -545,7 +546,7 @@ class TemplateDef(object):
         values = {}
         sig_args, var_args, var_kw, defaults = self._func_signature
         extra_kw = {}
-        for name, value in kw.iteritems():
+        for name, value in kw.items():
             if not var_kw and name not in sig_args:
                 raise TypeError(
                     'Unexpected argument %s' % name)
@@ -568,7 +569,7 @@ class TemplateDef(object):
                 raise TypeError(
                     'Extra position arguments: %s'
                     % ', '.join(repr(v) for v in args))
-        for name, value_expr in defaults.iteritems():
+        for name, value_expr in defaults.items():
             if name not in values:
                 values[name] = self._template._eval(
                     value_expr, self._ns, self._pos)
@@ -581,17 +582,17 @@ class TemplateDef(object):
         return values
 
 
-class TemplateObject(object):
+class TemplateObject:
 
     def __init__(self, name):
         self.__name = name
         self.get = TemplateObjectGetter(self)
 
     def __repr__(self):
-        return '<%s %s>' % (self.__class__.__name__, self.__name)
+        return f'<{self.__class__.__name__} {self.__name}>'
 
 
-class TemplateObjectGetter(object):
+class TemplateObjectGetter:
 
     def __init__(self, template_obj):
         self.__template_obj = template_obj
@@ -600,10 +601,10 @@ class TemplateObjectGetter(object):
         return getattr(self.__template_obj, attr, Empty)
 
     def __repr__(self):
-        return '<%s around %r>' % (self.__class__.__name__, self.__template_obj)
+        return f'<{self.__class__.__name__} around {self.__template_obj!r}>'
 
 
-class _Empty(object):
+class _Empty:
     def __call__(self, *args, **kw):
         return self
 
@@ -614,7 +615,7 @@ class _Empty(object):
         return 'Empty'
 
     def __unicode__(self):
-        return u''
+        return ''
 
     def __iter__(self):
         return iter(())
@@ -662,7 +663,7 @@ def lex(s, name=None, trim_whitespace=True, line_offset=0, delimiters=None):
     chunks = []
     last = 0
     last_pos = (line_offset + 1, 1)
-    token_re = re.compile(r'%s|%s' % (re.escape(delimiters[0]),
+    token_re = re.compile(r'{}|{}'.format(re.escape(delimiters[0]),
                                       re.escape(delimiters[1])))
     for match in token_re.finditer(s):
         expr = match.group(0)
@@ -914,7 +915,7 @@ def parse_one_cond(tokens, name, context):
     elif first == 'else':
         part = ('else', pos, None, content)
     else:
-        assert 0, "Unexpected token %r at %s" % (first, pos)
+        assert 0, f"Unexpected token {first!r} at {pos}"
     while 1:
         if not tokens:
             raise TemplateError(
@@ -948,9 +949,9 @@ def parse_for(tokens, name, context):
         raise TemplateError(
             'You cannot have () in the variable section of a for loop (%r)'
             % vars, position=pos, name=name)
-    vars = tuple([
+    vars = tuple(
         v.strip() for v in first[:match.start()].split(',')
-        if v.strip()])
+        if v.strip())
     expr = first[match.end():]
     while 1:
         if not tokens:
